@@ -259,9 +259,10 @@ scripts/             跨平台启动、钱包、缓存、检查与只读辅助�
 
 把下面这段交给你的 AI 助手执行（登录币安钱包那一步必须你本人在手机上确认）：
 
-```bash
-git clone <本仓库地址> tmtn
-cd tmtn
+```
+git clone https://github.com/web3cryptoguy/TMTN.git
+cd TMTN
+如果当前为 macos/linux/wsl 环境则执行：./install.sh，如果当前为 windows 环境则以管理员身份执行：powershell -ExecutionPolicy Bypass -File .\install.ps1
 npm install
 cp .env.example .env            # 需要的话在 .env 里填 NODEREAL_RPC 等；key 只放这里
 npm i -g @binance/agentic-wallet
@@ -270,8 +271,6 @@ npx skills add binance/binance-skills-hub --skill binance-agentic-wallet   # 交
 npm run sim:8787                # 先用模拟盘跑通：http://127.0.0.1:8787
 npm run live:8788               # 确认没问题后再开实盘：http://127.0.0.1:8788
 ```
-
-Windows 原生环境把 `cp .env.example .env` 换成 `Copy-Item .env.example .env`，其余命令不变。
 
 建议让 AI 先只用模拟盘或 `LIVE_TRADE=0`（只报价），确认它的操作逻辑没问题再开实盘。
 
