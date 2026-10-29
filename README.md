@@ -63,7 +63,7 @@
 ```bash
 npm i -g @binance/agentic-wallet
 baw auth signin            # 按提示在币安 App 里扫码 / 确认
-baw wallet status          # 显示 CONNECTED 即可
+baw wallet status          # 显示 CONNECTED/Logged in 即可
 ```
 
 Windows 下 npm 生成的是 `baw.cmd`，TMTN 会自动找到同一安装目录中的 JS 入口，不需要手动改 `BAW_BIN`。如果使用非标准安装位置，可在 `.env` 填绝对路径：
@@ -104,11 +104,6 @@ npm run live:8788           # 实盘：真实行情 + baw 真实下单（只有�
 Copy-Item .env.example .env
 ```
 
-```bat
-:: Windows CMD
-copy .env.example .env
-```
-
 ```bash
 # macOS / Linux / WSL
 cp .env.example .env
@@ -123,11 +118,6 @@ cp .env.example .env
 ```powershell
 # Windows PowerShell
 $env:PORT='9000'; $env:MODE='sim'; npm start
-```
-
-```bat
-:: Windows CMD
-set PORT=9000&& set MODE=sim&& npm start
 ```
 
 ```bash
