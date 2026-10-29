@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2), offline = args.includes('--offline'), strict = args.includes('--strict');
 const pass = args.filter((a) => !['--offline', '--strict'].includes(a));
-const steps = [['静态检查', 'lint.mjs', []], ['离线路由检查', 'offline.mjs', []], ...(offline ? [] : [['在线路由体检', 'routes.mjs', pass]])];
+const steps = [['静态检查', 'lint.mjs', []], ['跨平台检查', 'platform.mjs', []], ['离线路由检查', 'offline.mjs', []], ...(offline ? [] : [['在线路由体检', 'routes.mjs', pass]])];
 let bad = 0;
 for (const [name, f, a] of steps) {
   console.log(`\n=== ${name} ===`);

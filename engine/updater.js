@@ -143,7 +143,9 @@ export function mountUpdater(app, { rootDir, peers = 0 }) {
   async function npmInstallIfNeeded(oldDeps) {
     if (depsOf(path.join(rootDir, 'package.json')) === oldDeps) return step('依赖没有变化，跳过 npm install');
     step('依赖有变化，正在 npm install（可能要 1 分钟）…');
-    await run(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['install', '--omit=dev', '--no-audit', '--no-fund'], { cwd: rootDir, timeout: 600e3, shell: process.platform === 'win32' });
+    const args = ['install', '--omit=dev', '--no-audit', '--no-fund'];
+    if (process.env.npm_execpath) await run(process.execPath, [process.env.npm_execpath, ...args], { cwd: rootDir, timeout: 600e3 });
+    else await run(process.platform === 'win32' ? 'npm.cmd' : 'npm', args, { cwd: rootDir, timeout: 600e3, shell: process.platform === 'win32' });
     step('依赖安装完成');
   }
 
@@ -201,9 +203,9 @@ export function mountUpdater(app, { rootDir, peers = 0 }) {
     if (!out && process.platform === 'darwin') { try { const r = spawnSync('lsof', ['-a', '-p', String(process.pid), '-d', '1', '-Fn'], { encoding: 'utf8', timeout: 3000 }); out = /^n(\/.+)$/m.exec(r.stdout || '')?.[1] || null; } catch {} }
     if (!out || !fs.existsSync(out) || !fs.statSync(out).isFile()) out = path.join(rootDir, 'tmtn.log');
     const fd = fs.openSync(out, 'a'), args = [...process.execArgv, ...process.argv.slice(1)];
-    const child = process.platform === 'win32'
-      ? spawn('cmd', ['/c', `timeout /t 2 /nobreak >nul & "${process.execPath}" ${args.map((a) => `"${a}"`).join(' ')}`], { cwd: process.cwd(), env: process.env, detached: true, stdio: ['ignore', fd, fd], windowsHide: true })
-      : spawn('/bin/sh', ['-c', 'sleep 2; exec "$0" "$@"', process.execPath, ...args], { cwd: process.cwd(), env: process.env, detached: true, stdio: ['ignore', fd, fd] });
+    const delay = Number(process.env.TMTN_RESTART_DELAY_MS || 2000);
+    const bootstrap = `setTimeout(() => { const { spawn } = require('node:child_process'); const c = spawn(process.execPath, process.argv.slice(1), { cwd: process.cwd(), env: process.env, detached: true, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true }); c.unref(); setTimeout(() => process.exit(0), 100); }, ${delay});`;
+    const child = spawn(process.execPath, ['-e', bootstrap, ...args], { cwd: process.cwd(), env: process.env, detached: true, stdio: ['ignore', fd, fd], windowsHide: true });
     child.unref();
     setTimeout(() => process.exit(0), 600);
     return out;

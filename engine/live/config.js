@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { setNodeRealSlots } from './rpc.js';
 // 启动时读项目根目录的 .env（KEY=VALUE，# 开头是注释）；已经在环境变量里的不覆盖。.env 在 .gitignore 里，放私有的 RPC key 等
 try {
-  for (const line of readFileSync(new URL('../../.env', import.meta.url), 'utf8').split('\n')) {
+  for (const line of readFileSync(new URL('../../.env', import.meta.url), 'utf8').replace(/^\uFEFF/, '').split('\n')) {
     const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/); if (m && process.env[m[1]] === undefined) process.env[m[1]] = m[2].replace(/^['"]|['"]$/g, '');
   }
 } catch { /* 没有 .env 就算了 */ }
@@ -24,6 +24,7 @@ export function fixMojibake(s) {
   } catch { return s; }
 }
 export const env = (k, d) => (process.env[k] === undefined || process.env[k] === '' ? d : process.env[k]);   // 空值当没填
+export const expandPath = (value) => String(value || '').replace(/^(?:\$HOME|\$\{HOME\}|%USERPROFILE%|~)(?=$|[\\/])/i, homedir());
 
 export const MODE = env('MODE', 'sim').toLowerCase();               // sim | live
 // 默认只报价/预演。LIVE_TRADE=1 才会通过 baw 真实下单，且只接受页面上手动点击的订单（自动买/自动卖仍只报价）。
@@ -34,12 +35,13 @@ export const AUTH_SIMULATE_LOGGED_OUT = env('AUTH_SIMULATE_LOGGED_OUT', '0') ===
 // 单笔真实买入上限（BNB）的初始值；页面「交易设置」里改过之后以 data/live-settings.json 为准。0 = 不限
 export const MAX_TRADE_BNB = Number(env('MAX_TRADE_BNB', '0.5'));
 // 数据目录：默认项目里的 data/。第二个钱包的后端用 DATA_DIR 指向自己的目录（设置、持仓、规则、授权记录、耗时记录都分开）
-export const DATA_DIR = env('DATA_DIR', '') ? pathResolve(String(env('DATA_DIR', '')).replace(/^~(?=\/)/, homedir())) : fileURLToPath(new URL('../../data/', import.meta.url));
+export const DATA_DIR = env('DATA_DIR', '') ? pathResolve(expandPath(env('DATA_DIR', ''))) : fileURLToPath(new URL('../../data/', import.meta.url));
 export const dataFile = (name) => pathToFileURL(pathJoin(DATA_DIR, name));
 // 多钱包：本后端是第几个钱包（WALLET_SLOT），以及要一起下单的其他钱包后端（WALLET_PEERS，JSON 数组：[{ slot, label, url, bawDir }]）
 export const WALLET_SLOT = Number(env('WALLET_SLOT', '1'));
 export const WALLET_PEERS = (() => { try { return (JSON.parse(env('WALLET_PEERS', '[]')) || []).map((p) => (p && p.label ? { ...p, label: fixMojibake(p.label) } : p)); } catch { return []; } })();
-export const BAW_DIR = env('BINANCE_BAW_DIR', '');
+export const BAW_DIR = expandPath(env('BINANCE_BAW_DIR', ''));
+if (BAW_DIR) process.env.BINANCE_BAW_DIR = BAW_DIR;
 // 本后端只允许用这个钱包地址（可选）。baw 登录成别的账号时拒绝使用，防止拿错账号下单
 export const EXPECT_WALLET = env('WALLET_ADDRESS', '').toLowerCase();   // baw 的登录信息目录（空 = 默认 ~/.baw）
 // 只用公共节点跑行情订阅（第二个钱包的后端用，省 NodeReal 额度；交易链路照样用 NodeReal）
@@ -62,7 +64,7 @@ export const TRADE_RPC_URLS = env('TRADE_RPC_URL', OWN_RPC).split(',').map((x) =
 // 日志 / 归档节点是归档节点（Chainstack Growth 及以上的 archive 节点）时在 .env 写 RPC_ARCHIVE=1：Gang V3 / stocks pad 盘的链上历史不再限制只补最近 30 万块（约 1.5 天），一次查 1 万块
 export const RPC_ARCHIVE = env('RPC_ARCHIVE', '0') === '1';
 export const TRADE_FALLBACK_RPC = ['https://bsc-dataseed1.bnbchain.org', 'https://bsc-dataseed2.bnbchain.org', 'https://bsc-dataseed1.defibit.io', 'https://bsc-dataseed1.ninicoin.io', 'https://rpc-bsc.48.club'];
-export const BAW_BIN = env('BAW_BIN', 'baw');
+export const BAW_BIN = expandPath(env('BAW_BIN', 'baw'));
 export const BINANCE_CHAIN_ID = Number(env('BINANCE_CHAIN_ID', 56));
 export const BAW_SLIPPAGE_UNIT = env('BAW_SLIPPAGE_UNIT', 'percent'); // percent: 传 20 表示 20%；fraction: 传 0.2
 export const WALLET_LABEL = fixMojibake(env('WALLET_LABEL', '币安 Agentic 钱包'));

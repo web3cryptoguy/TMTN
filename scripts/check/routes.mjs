@@ -6,20 +6,23 @@
 // 用法：node scripts/check/routes.mjs [--url http://127.0.0.1:8788] [--app ~/Downloads/bsc-agent-trader] [--per 2] [代币地址 …]
 //   --app：读那个目录的 .env（RPC_URL、TMTN_API_TOKEN、PORT）和 data/api-token；默认同级的 bsc-agent-trader，没有就用本仓库
 import { readFileSync, existsSync } from 'node:fs';
+import { homedir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)), REPO = path.resolve(HERE, '..', '..');
 const argv = process.argv.slice(2), opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : d; };
-const APP = path.resolve(opt('--app', process.env.CHECK_APP_DIR || (existsSync(path.join(REPO, '..', 'bsc-agent-trader', '.env')) ? path.join(REPO, '..', 'bsc-agent-trader') : REPO)));
+const expand = (value) => String(value || '').replace(/^(?:\$HOME|\$\{HOME\}|%USERPROFILE%|~)(?=$|[\\/])/i, homedir());
+const APP = path.resolve(expand(opt('--app', process.env.CHECK_APP_DIR || (existsSync(path.join(REPO, '..', 'bsc-agent-trader', '.env')) ? path.join(REPO, '..', 'bsc-agent-trader') : REPO))));
 const PER = Number(opt('--per', 2)) || 2;
 const envFile = {};
-try { for (const l of readFileSync(path.join(APP, '.env'), 'utf8').split('\n')) { const m = l.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/); if (m) envFile[m[1]] = m[2].replace(/^['"]|['"]$/g, ''); } } catch { /* 没有 .env */ }
+try { for (const l of readFileSync(path.join(APP, '.env'), 'utf8').replace(/^\uFEFF/, '').split('\n')) { const m = l.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/); if (m) envFile[m[1]] = m[2].replace(/^['"]|['"]$/g, ''); } } catch { /* 没有 .env */ }
 for (const k of ['RPC_URL', 'NODEREAL_RPC', 'TRADE_RPC_URL', 'GANG_V3_PAD']) if (envFile[k] && process.env[k] === undefined) process.env[k] = envFile[k];
 // 安全：这个进程里不可能下单——LIVE_TRADE 关、baw 指向不存在的程序（万一有代码绕过下面的模拟 send 去调 baw，也只会报错）
 process.env.LIVE_TRADE = '0'; process.env.BAW_BIN = '/nonexistent/baw-disabled-in-check';
 const URL0 = opt('--url', process.env.CHECK_URL || `http://127.0.0.1:${envFile.PORT || 8788}`).replace(/\/$/, '');
-const TOKEN = process.env.TMTN_API_TOKEN || envFile.TMTN_API_TOKEN || (() => { try { return readFileSync(path.join(APP, envFile.DATA_DIR || 'data', 'api-token'), 'utf8').trim(); } catch { return ''; } })();
+const dataDir = envFile.DATA_DIR ? path.resolve(APP, expand(envFile.DATA_DIR)) : path.join(APP, 'data');
+const TOKEN = process.env.TMTN_API_TOKEN || envFile.TMTN_API_TOKEN || (() => { try { return readFileSync(path.join(dataDir, 'api-token'), 'utf8').trim(); } catch { return ''; } })();
 const EXTRA = argv.filter((a) => /^0x[0-9a-fA-F]{40}$/.test(a)).map((a) => a.toLowerCase());
 
 const { ethers } = await import('ethers');

@@ -19,19 +19,31 @@ MySQL 或 Redis 连不上、报错、超时都不影响使用：自动走原来�
 
 ## 启动
 
-一条命令（需要已装好并打开 Docker Desktop 或 OrbStack）：
+一条命令（需要已装好并打开 Docker Desktop、OrbStack 或 Docker Engine；Windows / macOS / Linux / WSL 通用）：
 
 ```bash
-scripts/enable-cache.sh
+npm run cache:enable
 ```
 
-它会装依赖、随机生成数据库密码、起 MySQL + Redis（端口只开在本机）、把 `MYSQL_URL` / `REDIS_URL` 写进 `.env`，可以重复运行。然后重启 TMTN 就生效。
+它会装依赖、随机生成数据库密码、起 MySQL + Redis（端口只开在本机）、把 `MYSQL_URL` / `REDIS_URL` 写进 `.env`，可以重复运行。`scripts/enable-cache.sh` 仍保留为 Bash 兼容入口。然后重启 TMTN 就生效。
 
 想自己动手的话：
 
 ```bash
-npm install                          # mysql2 / ioredis 是可选依赖，会一起装上
+npm install
+
+# macOS / Linux / WSL
 TMTN_DB_PASSWORD=换一个密码 docker compose -f docker/cache-compose.yml up -d
+```
+
+```powershell
+# Windows PowerShell
+$env:TMTN_DB_PASSWORD='换一个密码'; docker compose -f docker/cache-compose.yml up -d
+```
+
+```bat
+:: Windows CMD
+set TMTN_DB_PASSWORD=换一个密码&& docker compose -f docker/cache-compose.yml up -d
 ```
 
 `.env` 里加：

@@ -8,6 +8,8 @@
 
 <p align="center">当前版本 <b>v4.3</b> · 更新内容见 <a href="CHANGELOG.md">CHANGELOG.md</a></p>
 
+> **第一次使用请先看 [GUIDE-CN.md](GUIDE-CN.md)。** 里面用 macOS / Linux / WSL2 统一章节和 Windows 原生环境章节，说明环境检查、启动、钱包登录、页面操作和故障排查。
+
 > **English summary.** TMTN is a local, single-user trading terminal for BSC "agent-only" meme launchpads — **Flap Agent Bonding Curve**, **Four.meme (OpenFour, Agent-ID-exclusive template)** and **gang.fun (old pad + V2 pads)**. It runs a small Node.js server on `127.0.0.1` plus a browser UI. All signing goes through Binance's **Agentic Wallet CLI (`baw`)**, so **no private key is ever stored or handled locally**. Features include a GMGN-style trenches view, K-line charts, live trade feed, per-trader PnL drawer, one-click buy/sell panel, holdings with USD PnL, auto-claim and an optional MySQL + Redis history cache. **It trades real funds. It is unaudited. Use entirely at your own risk.**
 
 ---
@@ -44,13 +46,34 @@
 
 ## 环境要求
 
-- macOS / Linux，**Node.js 18+**（开发时用 v22），npm
+- **Node.js 18+**（推荐 v22 LTS）和 npm
+- 支持以下运行环境：
+
+| 平台 | 支持方式 | 说明 |
+|---|---|---|
+| macOS | 原生 | Intel / Apple Silicon 均可 |
+| Linux | 原生 | 桌面发行版和服务器均可 |
+| WSL2 | 原生 Linux 环境 | 推荐把仓库放在 WSL 文件系统；Windows 浏览器可直接访问 `localhost` |
+| Windows 10/11 | PowerShell / CMD 原生 | npm 脚本、路径、钱包 CLI 和 Docker 命令均跨平台 |
+
+- 多钱包和可选缓存需要 Docker：macOS / Windows 推荐 Docker Desktop 或 OrbStack，Linux 用 Docker Engine；WSL 使用 Docker Desktop 的 WSL Integration。
+- 在线更新需要 `git`、`curl` 和 `tar`。Windows 10/11 自带 `curl.exe` 和 `tar.exe`；旧版系统请先安装 Git for Windows。
 - 币安 **Agentic Wallet CLI**（实盘需要）：
 
 ```bash
 npm i -g @binance/agentic-wallet
 baw auth signin            # 按提示在币安 App 里扫码 / 确认
 baw wallet status          # 显示 CONNECTED 即可
+```
+
+Windows 下 npm 生成的是 `baw.cmd`，TMTN 会自动找到同一安装目录中的 JS 入口，不需要手动改 `BAW_BIN`。如果使用非标准安装位置，可在 `.env` 填绝对路径：
+
+```dotenv
+# Windows 示例（正斜杠更稳妥）
+BAW_BIN=C:/Users/you/AppData/Roaming/npm/node_modules/@binance/agentic-wallet/dist/index.js
+
+# macOS / Linux / WSL 示例
+BAW_BIN=/home/you/.local/share/pnpm/global/5/node_modules/@binance/agentic-wallet/dist/index.js
 ```
 
 > **必须先登录。** 实盘模式（`MODE=live`）下，程序每 10 秒用 `baw wallet status` 检查一次登录状态。未登录（或登录过期）时，页面会被一个关不掉的遮罩挡住，提示在终端运行 `baw auth signin`、在币安 App 中确认；所有动用资金的接口（下单、兑换、换回 BNB、领取、撤销授权、单币规则）都会返回 401「币安钱包未登录」。登录完成后遮罩自动消失。偶尔一次检查失败不算掉线，连续 2 次才会锁定。没装 baw 时遮罩会提示安装命令。模拟盘不受影响。
@@ -65,25 +88,80 @@ npx skills add binance/binance-skills-hub --skill binance-agentic-wallet
 
 ## 运行
 
+所有 npm 命令在 macOS、Linux、WSL2、Windows PowerShell 和 Windows CMD 中相同。
+
 ```bash
 npm install
-cp .env.example .env        # 按需修改；程序启动时会自动读取项目根目录的 .env
 
 npm run sim:8787            # 模拟盘：本地生成的代币和成交，不连钱包、不发交易
 npm run live:8788           # 实盘：真实行情 + baw 真实下单（只有你在页面上点的订单才会下）
 ```
 
+首次运行先创建 `.env`：
+
+```powershell
+# Windows PowerShell
+Copy-Item .env.example .env
+```
+
+```bat
+:: Windows CMD
+copy .env.example .env
+```
+
+```bash
+# macOS / Linux / WSL
+cp .env.example .env
+```
+
+程序启动时会自动读取项目根目录的 `.env`。`DATA_DIR`、`BINANCE_BAW_DIR`、`BAW_BIN` 和 `OPENFOUR_SCRIPT` 支持 `~`、`$HOME`、`${HOME}`、`%USERPROFILE%` 前缀；跨平台配置文件建议使用正斜杠 `/`。
+
 然后打开 `http://127.0.0.1:8787` 或 `http://127.0.0.1:8788`。服务只监听本机。
+
+如需临时覆盖端口或模式，注意不同 Shell 的写法：
+
+```powershell
+# Windows PowerShell
+$env:PORT='9000'; $env:MODE='sim'; npm start
+```
+
+```bat
+:: Windows CMD
+set PORT=9000&& set MODE=sim&& npm start
+```
+
+```bash
+# macOS / Linux / WSL
+PORT=9000 MODE=sim npm start
+```
+
+项目自带的 `npm run sim:8787`、`npm run live:8788`、`npm run live:wallet2` 已使用跨平台启动器，不需要这些前缀语法。
+
+### 端口排查
+
+```powershell
+# Windows PowerShell
+Get-NetTCPConnection -LocalPort 8788 -State Listen
+```
+
+```bash
+# macOS / Linux / WSL
+lsof -nP -iTCP:8788 -sTCP:LISTEN
+# 或
+ss -ltnp | grep ':8788'
+```
 
 ### 多钱包同时下单（可选）
 
 币安 Agentic Wallet 用网卡 MAC 识别设备，同一台电脑上登录两个账号会互相挤掉。所以钱包 1 照常跑在电脑上，钱包 2、3、4… 各跑一个 Docker 容器（固定虚拟 MAC、自己的登录目录、端口只开在 `127.0.0.1`），可以加任意多个：
 
 ```bash
-scripts/add-wallet.sh 2 --address 0x钱包2的地址   # 建容器 tmtn-wallet2（127.0.0.1:8789），默认只报价
+npm run add-wallet -- 2 --address 0x钱包2的地址   # 建容器 tmtn-wallet2（127.0.0.1:8789），默认只报价
 docker exec -it tmtn-wallet2 baw auth signin      # 用钱包 2 的币安账号扫码，核对配对码
-scripts/add-wallet.sh --peers --write-env         # 写进 .env 的 WALLET_PEERS，然后重启钱包 1
+npm run add-wallet -- --peers --write-env         # 写进 .env 的 WALLET_PEERS，然后重启钱包 1
 ```
+
+`scripts/add-wallet.sh` 仍保留给习惯 Bash 的用户，但内部也转发到同一个 Node 实现。Windows 原生环境直接使用上面的 `npm run add-wallet -- ...`。
 
 完整步骤（前置检查、校验、扫错账号怎么办）见 **[docs/add-wallet.md](docs/add-wallet.md)**，可以直接交给你的 AI 助手照做。
 
@@ -91,7 +169,7 @@ scripts/add-wallet.sh --peers --write-env         # 写进 .env 的 WALLET_PEERS
 
 ### 历史数据缓存（可选，MySQL + Redis）
 
-配上之后，各盘从开盘起的成交、外盘分钟 K 线、BNB 小时价、钱包交易记录会存进 MySQL，重启或再次点开同一个币只补新的（Gang 大盘从翻 100 页变成 1 页，Four / Flap 门槛盘不再从创建区块重扫）。不配也照常运行，数据库连不上时自动走原来的路径。装好 Docker 后一条命令开启：`scripts/enable-cache.sh`，然后重启。详细说明见 **[docs/cache.md](docs/cache.md)**。
+配上之后，各盘从开盘起的成交、外盘分钟 K 线、BNB 小时价、钱包交易记录会存进 MySQL，重启或再次点开同一个币只补新的（Gang 大盘从翻 100 页变成 1 页，Four / Flap 门槛盘不再从创建区块重扫）。不配也照常运行，数据库连不上时自动走原来的路径。装好 Docker 后运行 `npm run cache:enable`，然后重启。详细说明见 **[docs/cache.md](docs/cache.md)**。
 
 ### 更新与回退版本
 
@@ -125,13 +203,13 @@ scripts/add-wallet.sh --peers --write-env         # 写进 .env 的 WALLET_PEERS
 | `FOUR_LOG_RPC` | 有 `NODEREAL_RPC` 用它，否则 `https://bsc-rpc.publicnode.com` | 扫 Four 事件用的 RPC（getLogs） |
 | `FOUR_LOG_STEP` | NodeReal `49000` / 公共节点 `5000` | 每次 getLogs 查多少块 |
 | `FOUR_BACKFILL_BLOCKS` | `150000` | 启动时往回扫多少个区块的 Four 新盘 |
-| `BAW_BIN` | `baw` | baw 可执行文件路径 |
+| `BAW_BIN` | `baw` | baw 可执行文件或 CLI JS 入口；支持 `~` / `$HOME` / `%USERPROFILE%`，Windows 会自动解析 `baw.cmd` |
 | `BINANCE_CHAIN_ID` | `56` | 链 ID |
 | `BAW_SLIPPAGE_UNIT` | `percent` | baw 滑点参数单位 |
 | `WALLET_LABEL` | `币安 Agentic 钱包` | 页面上显示的钱包名 |
-| `OPENFOUR_SCRIPT` | （自动查找） | Four 技能脚本路径 |
+| `OPENFOUR_SCRIPT` | （自动查找） | Four 技能脚本路径；支持 `~` / `$HOME` / `%USERPROFILE%` |
 | `AUTH_SIMULATE_LOGGED_OUT` | `0` | 调试：假装未登录 |
-| `DATA_DIR` | `data/` | 数据目录（多钱包时每个后端各用一个） |
+| `DATA_DIR` | `data/` | 数据目录（多钱包时每个后端各用一个）；支持 `~` / `$HOME` / `%USERPROFILE%`，建议写正斜杠 |
 | `WALLET_SLOT` / `WALLET_PEERS` | `1` / `[]` | 多钱包：本后端是第几个钱包 / 一起下单的其他钱包后端 |
 | `WALLET_ADDRESS` | （空） | 本后端只允许这个钱包地址；baw 登录成别的账号时拒绝使用（防止拿错账号下单） |
 | `MYSQL_URL` | （空） | 可选：历史数据缓存的 MySQL，如 `mysql://tmtn:密码@127.0.0.1:13306/tmtn`（只放 `.env`），见 [docs/cache.md](docs/cache.md) |
@@ -180,7 +258,7 @@ engine/
     latency.js       耗时记录
     meta.js names.js
 public/              页面（index.html、app.js、style.css、vendor/lightweight-charts）
-scripts/             只读的辅助脚本（耗时报表、测试网信息、监听 Four 新币）
+scripts/             跨平台启动、钱包、缓存、检查与只读辅助脚本
 ```
 
 ## 让 AI / Agent 接入（教程）
@@ -192,7 +270,8 @@ scripts/             只读的辅助脚本（耗时报表、测试网信息、�
 把下面这段交给你的 AI 助手执行（登录币安钱包那一步必须你本人在手机上确认）：
 
 ```bash
-git clone <本仓库地址> tmtn && cd tmtn
+git clone <本仓库地址> tmtn
+cd tmtn
 npm install
 cp .env.example .env            # 需要的话在 .env 里填 NODEREAL_RPC 等；key 只放这里
 npm i -g @binance/agentic-wallet
@@ -202,11 +281,15 @@ npm run sim:8787                # 先用模拟盘跑通：http://127.0.0.1:8787
 npm run live:8788               # 确认没问题后再开实盘：http://127.0.0.1:8788
 ```
 
+Windows 原生环境把 `cp .env.example .env` 换成 `Copy-Item .env.example .env`，其余命令不变。
+
 建议让 AI 先只用模拟盘或 `LIVE_TRADE=0`（只报价），确认它的操作逻辑没问题再开实盘。
 
 ### 2. 本地接口
 
 地址都是 `http://127.0.0.1:<PORT>`，请求和返回都是 JSON。实盘（`MODE=live`）和模拟盘的接口一样，少数只有实盘可用（下面标了「实盘」）。
+
+下文的 `curl + jq` 示例用于 macOS / Linux / WSL。Windows PowerShell 可直接用 `Invoke-RestMethod http://127.0.0.1:8788/api/state`；POST 时用 `Invoke-RestMethod -Method Post -ContentType 'application/json' -Body '{"...":"..."}'`。
 
 **行情与代币**
 

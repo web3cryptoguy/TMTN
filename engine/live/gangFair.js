@@ -19,7 +19,13 @@ const API = 'https://gang.fun/api';
 // 其他钱包的 baw 命令：WALLET_PEERS 里的 bawCmd（如 "docker exec tmtn-wallet2 baw"），或 FAIR_BAW_CMD_<slot>，或从 signin（"docker exec -it 容器 baw auth signin"）推出来
 const peerCmd = (p) => {
   const c = p.bawCmd || env(`FAIR_BAW_CMD_${p.slot}`, '') || (/^docker exec (?:-\w+ )*([\w.-]+) baw\b/.exec(String(p.signin || '')) ? `docker exec ${RegExp.$1} baw` : '');
-  return c ? String(c).split(/\s+/).filter(Boolean) : null;
+  if (!c) return null;
+  if (Array.isArray(c)) return c.map(String).filter(Boolean);
+  const text = String(c).trim();
+  if (text.startsWith('[')) {
+    try { const v = JSON.parse(text); if (Array.isArray(v)) return v.map(String).filter(Boolean); } catch { /* fall through */ }
+  }
+  return text.split(/\s+/).filter(Boolean);
 };
 const expects = new Map();
 async function peerExpect(p) {

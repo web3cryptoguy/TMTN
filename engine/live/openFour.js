@@ -6,11 +6,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
-import { env } from './config.js';
+import { env, expandPath } from './config.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPT = [
-  env('OPENFOUR_SCRIPT', ''),
+  expandPath(env('OPENFOUR_SCRIPT', '')),
   path.join(here, '../../.agents/skills/binance-agentic-wallet/scripts/agent-id-exclusive-token-launches.mjs'),
   path.join(os.homedir(), '.claude/skills/binance-agentic-wallet/scripts/agent-id-exclusive-token-launches.mjs'),
 ].find((p) => p && existsSync(p));

@@ -1,9 +1,34 @@
 // 币安 Agentic Wallet CLI（baw）封装：钱包地址、余额、报价、合约调用预演；LIVE_TRADE=1 时才会用到 swap / contract-call execute。本程序不接触私钥。
 // execFile 不经过 shell，参数逐个传入，地址都先校验。
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { ethers } from 'ethers';
 import { BAW_BIN, BINANCE_CHAIN_ID, BAW_SLIPPAGE_UNIT, DRY_RUN } from './config.js';
 import { assertLiquid, isQuoteToken } from './quoteRoutes.js';
+
+// npm 全局命令在 Windows 是 .cmd，macOS / Linux / WSL 也常是软链接。
+// 找到包内的 JS 入口后用当前 node 启动，兼容各平台且不经过 shell。
+const BAW_JS = (() => {
+  if (!/\.(?:c|m)?js$/i.test(BAW_BIN)) {
+    const dirs = /[\\/]/.test(BAW_BIN)
+      ? [path.dirname(path.resolve(BAW_BIN))]
+      : String(process.env.PATH || '').split(path.delimiter).map((d) => d.trim().replace(/^"|"$/g, '')).filter(Boolean);
+    const roots = [];
+    for (const dir of dirs) {
+      roots.push(path.join(dir, 'node_modules'), path.resolve(dir, '..', 'lib', 'node_modules'), path.resolve(dir, '..', 'node_modules'));
+    }
+    for (const prefix of [process.env.npm_config_prefix, process.env.NPM_CONFIG_PREFIX].filter(Boolean)) {
+      roots.push(path.join(prefix, 'node_modules'), path.join(prefix, 'lib', 'node_modules'));
+    }
+    for (const root of [...new Set(roots)]) {
+      const entry = path.join(root, '@binance', 'agentic-wallet', 'dist', 'index.js');
+      if (existsSync(entry)) return entry;
+    }
+    return null;
+  }
+  return BAW_BIN;
+})();
 
 export function assertAddress(a, name = 'address') {
   if (!a || !ethers.isAddress(String(a))) throw new Error(`invalid_${name}`);
@@ -42,7 +67,9 @@ export async function runBaw(args, opts = {}) {
 
 function runBawOnce(args, { timeoutMs = 90_000, onChild } = {}) {
   return new Promise((resolve, reject) => {
-    const child = execFile(BAW_BIN, ['--json', ...args], { timeout: timeoutMs, maxBuffer: 4 * 1024 * 1024, env: process.env }, (err, stdout, stderr) => {
+    const command = BAW_JS ? process.execPath : BAW_BIN;
+    const commandArgs = BAW_JS ? [BAW_JS, '--json', ...args] : ['--json', ...args];
+    const child = execFile(command, commandArgs, { timeout: timeoutMs, maxBuffer: 4 * 1024 * 1024, env: process.env }, (err, stdout, stderr) => {
       const text = String(stdout || '').trim();
       let parsed = null;
       if (text) { try { parsed = JSON.parse(text); } catch { /* 非 JSON */ } }

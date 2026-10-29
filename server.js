@@ -172,7 +172,12 @@ const peerFetch = async (peer, p, body, ms = 2500) => {
   const j = await r.json().catch(() => null); if (!r.ok) throw Object.assign(new Error(j?.error || `HTTP ${r.status}`), { status: r.status }); return j;
 };
 // 其他钱包的 baw 用自己的登录目录 + 自己的设备标识（BINANCE_INSTANCE_ID），避免和钱包 1 的登录互相影响
-const signinCmd = (dir, inst) => (dir ? `BINANCE_BAW_DIR=${dir}${inst ? ` BINANCE_INSTANCE_ID=${inst}` : ''} baw auth signin` : 'baw auth signin');
+const signinCmd = (dir, inst) => {
+  if (!dir) return 'baw auth signin';
+  if (process.platform === 'win32') return `$env:BINANCE_BAW_DIR='${String(dir).replace(/'/g, "''")}'${inst ? `; $env:BINANCE_INSTANCE_ID='${String(inst).replace(/'/g, "''")}'` : ''}; baw auth signin`;
+  const q = (v) => `'${String(v).replace(/'/g, `'\\''`)}'`;
+  return `BINANCE_BAW_DIR=${q(dir)}${inst ? ` BINANCE_INSTANCE_ID=${q(inst)}` : ''} baw auth signin`;
+};
 // 给页面 / 主后端看的登录进度（不含 qrCodeId 等内部字段）
 const loginView = (l) => (l ? { id: l.id, state: l.state, urlForWeb: l.urlForWeb, pairingCode: l.pairingCode, expireAt: l.expireAt, message: l.message, address: l.address || null } : null);
 const selfInfo = () => ({ slot: WALLET_SLOT, expect: process.env.WALLET_ADDRESS || null, login: loginView(trader.status?.login), authMessage: trader.status?.auth?.message || '', label: WALLET_LABEL, agentId: trader.status?.auth?.agentId || null, address: trader.wallets?.[0]?.address || null, bnb: trader.wallets?.[0]?.bnb ?? null, auth: trader.status?.auth?.state || 'checking', bawDir: BAW_DIR || null, signin: signinCmd(BAW_DIR, process.env.BINANCE_INSTANCE_ID) });
@@ -706,7 +711,11 @@ const broadcast = (msg) => {
   try { s = JSON.stringify(msg); } catch (e) { if (!badFrameLogged) { badFrameLogged = true; console.error(`推送 ${msg?.type} 序列化失败，已跳过：${e.message}`); } return; }
   for (const c of wss.clients) if (c.readyState === 1) c.send(s);
 };
-process.on('unhandledRejection', (e) => console.error('unhandledRejection:', e?.stack || e));
+process.on('unhandledRejection', (e) => {
+  const msg = String(e?.message || e);
+  if (e?.code === 'UNSUPPORTED_OPERATION' && /provider destroyed/.test(msg) && /eth_subscribe/.test(msg)) return;   // 主动断开节点时 ethers 会取消尚未完成的订阅
+  console.error('unhandledRejection:', e?.stack || e);
+});
 process.on('uncaughtException', (e) => console.error('uncaughtException:', e?.stack || e));
 
 wss.on('connection', (ws) => {

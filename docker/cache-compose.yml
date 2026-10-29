@@ -1,5 +1,5 @@
 # 历史数据缓存（可选）：MySQL + Redis，端口只开在本机 127.0.0.1。
-#   启动：TMTN_DB_PASSWORD=换一个密码 docker compose -f docker/cache-compose.yml up -d
+#   推荐：在项目根目录运行 npm run cache:enable（自动生成密码并写 .env）
 #   然后在 .env 里填：
 #     MYSQL_URL=mysql://tmtn:<同一个密码>@127.0.0.1:13306/tmtn
 #     REDIS_URL=redis://127.0.0.1:16379

@@ -54,12 +54,17 @@ export class WsLogs {
     let ws; try { ws = new ethers.WebSocketProvider(url, 56); } catch (e) { return this.retry(i, e); }
     this.ws = ws; this.idx = i; this.status.wss = nodeName(url); this.status.connected = false;
     const sock = ws.websocket;
-    let opened = false;
-    sock?.addEventListener?.('open', () => { opened = true; if (this.ws === ws) { this.status.connected = true; this.status.connectedAt = Date.now(); this.status.lastError = null; } });
+    let opened = false, subscribed = false;
+    const subscribe = () => {
+      if (subscribed || this.ws !== ws) return;
+      subscribed = true;
+      for (const f of this.filters) ws.on(f, (log) => { this.status.connected = true; this.status.lastLogAt = Date.now(); bumpUsage(this.label + '-ws推送', url, { method: 'logs' }); const k = `${nodeName(url)}|${this.label}-ws推送|ws_bytes`; RPC_USAGE.set(k, (RPC_USAGE.get(k) || 0) + JSON.stringify(log).length + 200);   /* WS 按字节计费，估算每条推送的大小 */ try { this.onLog(log); } catch { /* 单条解析失败不影响订阅 */ } });
+      bumpUsage(this.label, url, this.filters.map(() => ({ method: 'eth_subscribe' })));
+    };
+    sock?.addEventListener?.('open', () => { opened = true; if (this.ws === ws) { this.status.connected = true; this.status.connectedAt = Date.now(); this.status.lastError = null; subscribe(); } });
     sock?.addEventListener?.('close', () => this.retry(i, new Error('连接断开'), ws));
     sock?.addEventListener?.('error', (e) => { if (!opened && /nodereal/i.test(url)) WS_COOL.set(url, Date.now() + 30 * 60_000); this.retry(i, e?.error || new Error('连接出错'), ws); });
-    for (const f of this.filters) ws.on(f, (log) => { this.status.connected = true; this.status.lastLogAt = Date.now(); bumpUsage(this.label + '-ws推送', url, { method: 'logs' }); const k = `${nodeName(url)}|${this.label}-ws推送|ws_bytes`; RPC_USAGE.set(k, (RPC_USAGE.get(k) || 0) + JSON.stringify(log).length + 200);   /* WS 按字节计费，估算每条推送的大小 */ try { this.onLog(log); } catch { /* 单条解析失败不影响订阅 */ } });
-    bumpUsage(this.label, url, this.filters.map(() => ({ method: 'eth_subscribe' })));
+    if (sock?.readyState === 1) subscribe();
     clearTimeout(this.backT);
     if (i > 0) this.backT = setTimeout(() => { if (this.ws === ws) { this.drop(ws); this.connect(0); } }, 10 * 60_000);
   }

@@ -1,6 +1,6 @@
 // 查 .env 的 RPC_URL（Chainstack）是不是归档节点、getLogs 一次能查多大区间。只读，不打印 key。
 import fs from 'node:fs';
-const env = Object.fromEntries(fs.readFileSync(new URL('../.env', import.meta.url), 'utf8').split('\n').filter((l) => /^\w+=/.test(l)).map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1).trim()]));
+const env = Object.fromEntries(fs.readFileSync(new URL('../.env', import.meta.url), 'utf8').replace(/^\uFEFF/, '').split('\n').filter((l) => /^\w+=/.test(l)).map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1).trim()]));
 const url = process.argv[2] ? env[process.argv[2]] : env.RPC_URL;
 const mask = (s) => String(s).replace(/(chainstack\.com\/|nodereal\.io\/(?:ws\/)?v1\/|dwellir\.com\/)[A-Za-z0-9-]+/g, '$1***');
 let id = 0;
