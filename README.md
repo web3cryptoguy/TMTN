@@ -6,7 +6,7 @@
 
 <p align="center"><b><i>TMTN = The Match, The Night</i></b></p>
 
-<p align="center">当前版本 <b>v4.3</b> · 更新内容见 <a href="CHANGELOG.md">CHANGELOG.md</a></p>
+<p align="center">当前版本 <b>v4.441</b> · 更新内容见 <a href="CHANGELOG.md">CHANGELOG.md</a></p>
 
 > **第一次使用请先看 [GUIDE-CN.md](GUIDE-CN.md)。** 里面用 macOS / Linux / WSL2 统一章节和 Windows 原生环境章节，说明环境检查、启动、钱包登录、页面操作和故障排查。
 
