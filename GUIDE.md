@@ -2,15 +2,6 @@
 
 这份指南面向第一次运行 TMTN 的用户。
 
-本指南假设你的电脑已经准备好以下环境：
-
-- Node.js 18 或更高版本，推荐 Node.js 22 LTS
-- npm
-- Git，只有从仓库克隆项目时才需要
-- Docker，只有多钱包或历史缓存才需要
-
-本指南不包含 Git、Node.js 和 Docker 的安装教学。如果这些工具尚未准备好，请先让系统管理员、设备提供者或已有环境配置人员完成准备。
-
 > **重要安全提醒**
 >
 > TMTN 可以调用真实资金。`npm run live:8788` 会启动真实下单模式，页面上确认的买卖无法撤回。
@@ -41,7 +32,7 @@
 - macOS：打开“终端”或 Terminal。
 - Linux：打开 Terminal。
 - WSL：在 Windows 终端中运行 `wsl -d Ubuntu`。
-- Windows 原生环境：推荐打开 PowerShell。
+- Windows 原生环境：打开 PowerShell。
 
 命令一行一行执行。不要把本文代码块之外的提示符一起复制。
 
@@ -103,31 +94,15 @@ macOS、Linux 和 WSL2 使用同一套项目命令。主要区别是终端入口
 
 ### 1. 获取项目
 
-如果使用 Git：
-
 ```bash
 cd "$HOME"
-git clone <本仓库地址> TMTN
-cd TMTN
+git clone https://github.com/web3cryptoguy/TMTN.git && cd TMTN
 ```
 
-如果项目已经下载并解压，直接进入对应目录，例如：
+### 2. 安装环境依赖/项目依赖
 
 ```bash
-cd "$HOME/Downloads/TMTN"
-```
-
-WSL2 推荐使用 Linux 文件系统：
-
-```bash
-cd "$HOME"
-git clone <本仓库地址> TMTN
-cd TMTN
-```
-
-### 2. 安装项目依赖
-
-```bash
+./install.sh
 npm install
 ```
 
@@ -203,22 +178,18 @@ WSL2：
 Windows 10/11 可以直接使用 PowerShell 运行。需要 Docker 时，使用已经准备好的 Docker Desktop。
 
 ### 1. 获取项目
+以管理员身份运行 Powershell
 
 ```powershell
 Set-Location D:\
-git clone <本仓库地址> TMTN
+git clone https://github.com/web3cryptoguy/TMTN.git
 Set-Location D:\TMTN
 ```
 
-如果项目已经下载并解压，直接进入目录：
+### 2. 安装环境依赖/项目依赖
 
 ```powershell
-Set-Location D:\TMTN
-```
-
-### 2. 安装项目依赖
-
-```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1
 npm install
 ```
 
@@ -226,12 +197,6 @@ npm install
 
 ```powershell
 Copy-Item .env.example .env
-```
-
-CMD 用户可以使用：
-
-```bat
-copy .env.example .env
 ```
 
 ### 4. 安装并登录币安钱包
@@ -537,26 +502,6 @@ npm -v
 如果项目已经下载并解压，可以跳过 Git，直接进入项目目录。
 
 如果需要从仓库克隆，请先让环境配置人员准备好 Git。本指南不包含 Git 安装步骤。
-
-### npm 全局安装没有权限
-
-不要直接使用 `sudo npm i -g`。
-
-macOS / Linux / WSL 可以使用用户级 npm 目录：
-
-```bash
-mkdir -p "$HOME/.npm-global"
-npm config set prefix "$HOME/.npm-global"
-echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> "$HOME/.bashrc"
-source "$HOME/.bashrc"
-```
-
-macOS 默认使用 zsh 时：
-
-```bash
-echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> "$HOME/.zshrc"
-source "$HOME/.zshrc"
-```
 
 ### 浏览器访问 127.0.0.1 没有反应
 

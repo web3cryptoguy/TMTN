@@ -2,13 +2,13 @@
   <img src="public/logo.svg" width="120" alt="TMTN logo" />
 </p>
 
-<h1 align="center">TMTN · BSC Agent 内盘快速买卖终端</h1>
+<h1 align="center">TMTN · BNB Chain Agent 内盘快速买卖终端</h1>
 
 <p align="center"><b><i>TMTN = The Match, The Night</i></b></p>
 
-<p align="center">当前版本 <b>v4.441</b> · 更新内容见 <a href="CHANGELOG.md">CHANGELOG.md</a></p>
+<p align="center">当前版本 <b>v4.3</b> · 更新内容见 <a href="CHANGELOG.md">CHANGELOG.md</a></p>
 
-> **第一次使用请先看 [GUIDE-CN.md](GUIDE-CN.md)。** 里面用 macOS / Linux / WSL2 统一章节和 Windows 原生环境章节，说明环境检查、启动、钱包登录、页面操作和故障排查。
+> **第一次使用请先看 [GUIDE.md](GUIDE.md)。** 里面用 macOS / Linux / WSL2 统一章节和 Windows 原生环境章节，说明环境检查、启动、钱包登录、页面操作和故障排查。
 
 > **English summary.** TMTN is a local, single-user trading terminal for BSC "agent-only" meme launchpads — **Flap Agent Bonding Curve**, **Four.meme (OpenFour, Agent-ID-exclusive template)** and **gang.fun (old pad + V2 pads)**. It runs a small Node.js server on `127.0.0.1` plus a browser UI. All signing goes through Binance's **Agentic Wallet CLI (`baw`)**, so **no private key is ever stored or handled locally**. Features include a GMGN-style trenches view, K-line charts, live trade feed, per-trader PnL drawer, one-click buy/sell panel, holdings with USD PnL, auto-claim and an optional MySQL + Redis history cache. **It trades real funds. It is unaudited. Use entirely at your own risk.**
 
@@ -24,7 +24,7 @@
 
 ## 它是什么
 
-一个跑在你自己电脑上的 BSC 内盘交易终端：
+一个跑在你自己电脑上的 BNB Chain 内盘交易终端：
 
 - 实时发现 **Flap Agent 曲线**、**Four（OpenFour / Agent ID 专属模板）**、**gang.fun（老盘 + V2 报价币盘）** 的新盘、即将发射、已迁移的代币；
 - 用币安 **Agentic Wallet CLI（`baw`）** 下单：签名在币安那边完成，本地**不保存私钥**；
