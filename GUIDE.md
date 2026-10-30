@@ -34,6 +34,22 @@
 - WSL：在 Windows 终端中运行 `wsl -d Ubuntu`。
 - Windows 原生环境：打开 PowerShell。
 
+
+## macOS / Linux / WSL2
+
+<a id="unix"></a>
+
+macOS、Linux 和 WSL2 使用同一套项目命令。主要区别是终端入口、文件位置和 Docker 的启动方式。
+
+### 平台差异
+
+| 环境 | 终端入口 | 项目推荐位置 | Docker |
+|---|---|---|---|
+| macOS | 终端或 Terminal | `~/TMTN` | 使用已经安装并启动的 Docker Desktop 或 OrbStack |
+| Linux | Terminal | `~/TMTN` | 使用已经配置好的 Docker Engine |
+| WSL2 | Windows 终端运行 `wsl -d Ubuntu` | `~/TMTN`，不要放 `/mnt/c` | 使用已启用 WSL Integration 的 Docker Desktop |
+
+
 ### 1. 获取项目
 
 ```bash
