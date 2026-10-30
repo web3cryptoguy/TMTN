@@ -36,37 +36,6 @@
 
 命令一行一行执行。不要把本文代码块之外的提示符一起复制。
 
-### 检查必需环境
-
-在终端运行：
-
-```bash
-node -v
-npm -v
-```
-
-正常会显示类似：
-
-```text
-v22.20.0
-10.9.3
-```
-
-如果从 Git 仓库获取项目，再检查：
-
-```bash
-git --version
-```
-
-只有多钱包或历史缓存需要 Docker，可以稍后再检查：
-
-```bash
-docker --version
-docker compose version
-```
-
-如果命令存在但 Docker 报连接失败，先启动已经安装好的 Docker Desktop、OrbStack 或 Docker Engine。本指南不包含这些工具的安装步骤。
-
 ### 实盘额外需要
 
 实盘需要币安 Agentic Wallet CLI，命令名是 `baw`。
