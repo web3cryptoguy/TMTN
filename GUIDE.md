@@ -82,7 +82,7 @@ baw auth signin
 baw wallet status
 ```
 
-显示 `CONNECTED` 表示钱包已经登录。
+显示 `CONNECTED`/`Logged in` 表示钱包已经登录。
 
 ### 5. 启动模拟盘
 
@@ -281,7 +281,7 @@ baw auth signin
 baw wallet status
 ```
 
-显示 `CONNECTED` 表示正常。
+显示 `CONNECTED`/`Logged in` 表示正常。
 
 ### 4. 查看地址
 
